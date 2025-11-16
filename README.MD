@@ -56,7 +56,7 @@ Before running this project, ensure you have:
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint for code quality
 
-## 🏗️ Project Structure
+<!-- ## 🏗️ Project Structure
 
 ```
 reviewbot_front/
@@ -67,7 +67,7 @@ reviewbot_front/
 │   └── App.jsx         # Main application component
 ├── public/             # Static assets
 └── package.json        # Dependencies and scripts
-```
+``` -->
 
 ## 🌐 How It Works
 

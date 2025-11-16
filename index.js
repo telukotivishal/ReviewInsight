@@ -7,9 +7,11 @@ import axios from 'axios';  // Assuming you're using ES6 imports
 import contactRoutes from "./contactRoutes.js";
 import authRoutes from "./authRoutes.js";
 import loginRoutes from "./login.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Set up MongoDB connection URI
-const uri = "mongodb+srv://yashmanthri19:Yeshrecipe1212@recipedb.xrkobjp.mongodb.net/RecipeDB?retryWrites=true&w=majority";
+const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 const app = express();
@@ -30,7 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/login", loginRoutes);
 
 // Global Flask URL
-const flaskUrl = 'https://708b-34-75-36-186.ngrok-free.app/process'; // Replace with your Flask server URL
+const flaskUrl=process.env.FLASK_URL;
 
 // Route to handle product name and fetch reviews
 app.post("/send-reviews", async (req, res) => {

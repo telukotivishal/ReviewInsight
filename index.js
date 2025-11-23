@@ -18,11 +18,12 @@ const app = express();
 const port = 3000;
 app.use(bodyParser.json());
 // Enable CORS for the frontend origin (adjust if needed)
-app.use(cors({
-  origin: 'http://localhost:5173', // Frontend origin (adjust as per your setup)
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type'],
-}));
+// app.use(cors({
+//   origin: 'http://localhost:5173', // Frontend origin (adjust as per your setup)
+//   methods: ['GET', 'POST'],
+//   allowedHeaders: ['Content-Type'],
+// }));
+app.use(cors());
 
 app.use(express.json()); // For parsing application/json
 app.use(bodyParser.json()); // Middleware for parsing json data in the body

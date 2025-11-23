@@ -72,6 +72,11 @@ def scrape_multiple_review_pages(api_key, product_url, max_pages=5, delay=2):
         # Delay to avoid overwhelming the server or hitting rate limits
         time.sleep(delay)
     
+    with open("reviews.txt", "a+", encoding="utf-8") as f:
+        for re in all_reviews:
+            f.write(f"Title: {re['title']}\n")
+            f.write(f"Body: {re['body']}\n")
+            f.write("-" * 80 + "\n")
     return all_reviews
 
 # Your ScraperAPI key

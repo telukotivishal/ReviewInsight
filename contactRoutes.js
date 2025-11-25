@@ -2,8 +2,9 @@ import express from "express";
 import { MongoClient } from "mongodb";
 
 // MongoDB connection URI
-const uri =
-  "mongodb+srv://yashmanthri19:Yeshrecipe1212@recipedb.xrkobjp.mongodb.net/RecipeDB?retryWrites=true&w=majority";
+// const uri =
+//   "mongodb+srv://yashmanthri19:Yeshrecipe1212@recipedb.xrkobjp.mongodb.net/RecipeDB?retryWrites=true&w=majority";
+const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 const router = express.Router();

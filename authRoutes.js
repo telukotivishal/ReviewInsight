@@ -5,8 +5,11 @@ import { MongoClient } from "mongodb";
 const router = express.Router();
 
 // MongoDB connection
-const uri =
-  "mongodb+srv://yashmanthri19:Yeshrecipe1212@recipedb.xrkobjp.mongodb.net/?retryWrites=true&w=majority&appName=RecipeDB";
+// const uri =
+//   "mongodb+srv://yashmanthri19:Yeshrecipe1212@recipedb.xrkobjp.mongodb.net/?retryWrites=true&w=majority&appName=RecipeDB";
+
+const uri=process.env.MONGO_DB_URI;
+
 const client = new MongoClient(uri);
 
 router.post("/signup", async (req, res) => {

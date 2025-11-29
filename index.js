@@ -3,7 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { MongoClient } from 'mongodb';
 import { fetchAllReviews } from './Crawler.js'; 
-import axios from 'axios';  // Assuming you're using ES6 imports
+import axios from 'axios';  
 import contactRoutes from "./contactRoutes.js";
 import authRoutes from "./authRoutes.js";
 import loginRoutes from "./login.js";
@@ -11,31 +11,25 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Set up MongoDB connection URI
-const uri = process.env.MONGODB_URI;
+// const uri = process.env.MONGODB_URI;
+const uri="mongodb+srv://sohithreddy33:Sohith123@productdb.2flhp.mongodb.net/?appName=ProductDB";
 const client = new MongoClient(uri);
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT;
 app.use(bodyParser.json());
-// Enable CORS for the frontend origin (adjust if needed)
-// app.use(cors({
-//   origin: 'http://localhost:5173', // Frontend origin (adjust as per your setup)
-//   methods: ['GET', 'POST'],
-//   allowedHeaders: ['Content-Type'],
-// }));
+
 app.use(cors());
 
-app.use(express.json()); // For parsing application/json
-app.use(bodyParser.json()); // Middleware for parsing json data in the body
+app.use(express.json());
+app.use(bodyParser.json());
 
 app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/login", loginRoutes);
 
-// Global Flask URL
 const flaskUrl=process.env.FLASK_URL;
 
-// Route to handle product name and fetch reviews
 app.post("/send-reviews", async (req, res) => {
   const productName = req.body.productName;
 
@@ -44,14 +38,10 @@ app.post("/send-reviews", async (req, res) => {
   }
 
   try {
-    // Connect to the database
     await client.connect();
+    const database = client.db("Reviews"); 
+    const reviewsCollection = database.collection("ReviewBOT");
 
-    // Access the database and the relevant collection
-    const database = client.db("Reviews"); // Replace with your DB name
-    const reviewsCollection = database.collection("ReviewBOT"); // Replace with your collection name
-
-    // Fetch reviews for the product
     const reviews = await reviewsCollection
       .find({ name: productName })
       .toArray();
@@ -59,18 +49,12 @@ app.post("/send-reviews", async (req, res) => {
     if (reviews.length === 0) {
       return res.status(404).send("No reviews found for this product");
     }
-
-    // Concatenate all the reviews
     const concatenatedReviews = reviews
       .map(review => review.review)
-      .join(" "); // You can modify how the reviews are concatenated here
-
-    // Send concatenated reviews to the Flask server at flaskUrl
+      .join(" ");
     const flaskResponse = await axios.post(flaskUrl, {
       product_data: concatenatedReviews
     });
-
-    // Check the Flask response
     if (flaskResponse.status === 200) {
       console.log(flaskResponse.data.response_text)
       res.json({
@@ -88,29 +72,16 @@ app.post("/send-reviews", async (req, res) => {
     await client.close();
   }
 });
-
-// Route to get all product information (unique product names)
 app.get("/prods", async (req, res) => {
   try {
-    // Connect to the database
     await client.connect();
-
-    // Access the database and the relevant collection
-    const database = client.db("Reviews"); // Replace with your DB name
-    const reviewsCollection = database.collection("ReviewBOT"); // Replace with your collection name
-
-    // Fetch all product information
+    const database = client.db("Reviews"); 
+    const reviewsCollection = database.collection("ReviewBOT");
     const products = await reviewsCollection.find({}).toArray();
-
-    // Create an array of unique product names
     const uniqueProductNames = [...new Set(products.map(product => product.name))];
-
-    // Check if the collection has any products
     if (uniqueProductNames.length === 0) {
       return res.status(404).send("No products found");
     }
-
-    // Send the unique product names as JSON
     res.json(uniqueProductNames);
   } catch (err) {
     console.error("Error fetching products:", err);
@@ -120,28 +91,19 @@ app.get("/prods", async (req, res) => {
   }
 });
 
-// Route to search and get reviews for a product (from the scraper)
 app.post("/search", async (req, res) => {
   try {
-    const { productUrl } = req.body; // Get the product URL from the request body
-
+    const { productUrl } = req.body; 
     if (!productUrl) {
       return res.status(400).json({ error: "Product URL is required." });
     }
 
-    // Call the scraper function from crawler.js to get the reviews
-    const reviews = await fetchAllReviews(productUrl, 100); // Scrape 100 reviews or any other number you want
+    const reviews = await fetchAllReviews(productUrl, 100); 
     console.log(reviews);
-
-    // Concatenate all review texts into a single string
     const concatenatedReviews = reviews.map(review => review.reviewText).join(" ");
-
-    // Send the concatenated reviews to the Flask server at flaskUrl
     const flaskResponse = await axios.post(flaskUrl, {
       product_data: concatenatedReviews
     });
-
-    // Check the Flask response
     if (flaskResponse.status === 200) {
       console.log(flaskResponse.data.response_text);
       res.json({
@@ -158,7 +120,6 @@ app.post("/search", async (req, res) => {
   }
 });
 
-// Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

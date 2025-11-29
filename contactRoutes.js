@@ -1,15 +1,14 @@
 import express from "express";
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
 
-// MongoDB connection URI
-// const uri =
-//   "mongodb+srv://yashmanthri19:Yeshrecipe1212@recipedb.xrkobjp.mongodb.net/RecipeDB?retryWrites=true&w=majority";
+dotenv.config();
+
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 const router = express.Router();
 
-// Route to handle contact form submission
 router.post("/", async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -18,12 +17,9 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    // Connect to the MongoDB database
     await client.connect();
-    const database = client.db("Reviews"); // Use a new database or existing one
+    const database = client.db("Reviews");
     const contactCollection = database.collection("contact_RB");
-
-    // Insert the contact details into the collection
     const result = await contactCollection.insertOne({
       name,
       email,

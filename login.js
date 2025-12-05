@@ -7,74 +7,65 @@ dotenv.config();
 
 const router = express.Router();
 
-// Environment variables
 const LOGIN_DB_URI = process.env.LOGIN_DB_URI;
 
-// Ensure the LOGIN_DB_URI is set
 if (!LOGIN_DB_URI) {
-  console.error("LOGIN_DB_URI is not defined in the environment variables.");
+  console.error("Error during connection to the database.");
   process.exit(1);
 }
 
-// Create a separate connection for the login database
 const loginDB = mongoose.createConnection(LOGIN_DB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
 });
 
-// Handle MongoDB connection errors
+loginDB.on("connected", () => {
+  console.log("Successfully connected to the login database.");
+});
+
 loginDB.on("error", (err) => {
   console.error("MongoDB connection error:", err);
 });
 
-// Define the User schema and model using the login database connection
+const loginReady = loginDB.asPromise();
+
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 });
 
 const User = loginDB.model("Users", userSchema);
 
 // Login route
-router.post("/", async (req, res) => {
-  mongoose
-    .connect(LOGIN_DB_URI)
-    .then(() => {
-      console.log("Successfully connected to the login database.");
-    })
-    .catch((err) => {
-      console.error("MongoDB connection error:", err);
-    });
-
-  const { email, password } = req.body;
-  console.log(`Email: ${email} Password: ${password}`);
+router.post("/signin", async (req, res) => {
   try {
-    console.log("Checking email and password...");
+    await loginReady;
 
-    // Find the user by email in the login database
-    const user = await User.findOne({ email });
-    // const user = await User.findOne({ email: email.toLowerCase() });
+    const { username, password } = req.body;
 
-    console.log(user);
+    if (!username || !password) {
+      return res.status(400).json({ message: "username and password are required" });
+    }
+
+    const normalizedusername = username.trim().toLowerCase();
+    const user = await User.findOne({ username: normalizedusername }).lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Compare the provided password with the hashed password
     const isPasswordValid = await bcrypt.compare(password, user.password);
+
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid username or password" });
     }
 
     console.log("Login successful.");
-    // Send the response back to the client
-    res.status(200).json({ message: "Login successful" });
+    return res.status(200).json({ message: "Login successful" });
   } catch (error) {
     console.error("Login error:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// Export the router
 export default router;

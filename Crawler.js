@@ -1,10 +1,16 @@
 import { CrawlingAPI } from 'crawlbase';
-import fs from 'fs';
-import axios from 'axios';
+import dotenv from 'dotenv';
 
-const api = new CrawlingAPI({ token: 'panVxST8Utk3w9mkHX2dxA' });
+dotenv.config();
 
-const amazonCookies = 'x-acbin=Ws5Or0X6ElG9Xe0vMWl4M@XqRrJ2JRlMMCmAM4zNXx8HeNIJvv7LzW2igTy4EcLd; at-acbin=Atza|IwEBIDzqIDHmzvbJyHzgGeJg8JsG-mfGrdXWs5y9fVPFT96yrWWj_DlHKjimp7pvYaJ6n5RgaQ64CjecLR4URfmBXbOEsMuruUnDqA6C7utI-uWs6cNB4jITKaQ9zFjjLow39DyKFRpHzCoppTFw4etXm1PrQCQ_6Ft_9PfiiaBIXM6ctCczQS05stklQBQzcjj3cr5CbIVVg63kt3oj1qkWF_Z-OpaKgnTJjYUyFIxMU7lEZA'; 
+const { CRAWLBASE_TOKEN, AMAZON_REVIEW_COOKIES } = process.env;
+
+if (!CRAWLBASE_TOKEN) {
+  throw new Error('CRAWLBASE_TOKEN is not defined. Set it in the environment.');
+}
+
+const api = new CrawlingAPI({ token: CRAWLBASE_TOKEN });
+const amazonCookies = AMAZON_REVIEW_COOKIES ?? '';
 
 function extractASIN(url) {
   const match = url.match(/\/dp\/([A-Z0-9]{10})|\/gp\/product\/([A-Z0-9]{10})|\/product-reviews\/([A-Z0-9]{10})/);
@@ -12,32 +18,38 @@ function extractASIN(url) {
 }
 
 function constructReviewsURL(asin, pageNumber = 1) {
-  return `https://www.amazon.in/product-reviews/${asin}/?reviewerType=all_reviews&pageNumber=${pageNumber};`
+  return `https://www.amazon.in/product-reviews/${asin}/?reviewerType=all_reviews&pageNumber=${pageNumber}`;
 }
 
 async function fetchPage(url) {
   try {
-    const response = await api.get(url, {
+    const { statusCode, json, headers } = await api.get(url, {
       scraper: 'amazon-product-reviews',
       ajax_wait: 2000,
       page_wait: 2000,
       cookies: amazonCookies,
     });
 
-    if (response.statusCode === 200) {
-      const data = response.json.body;
-      return data.reviews.map((review) => ({
-        reviewerName: review.reviewerName,
-        reviewDate: review.reviewDate,
-        reviewRating: review.reviewRating,
-        reviewText: review.reviewText,
-      }));
-    } else {
-      console.error(`API request failed with status: ${response.statusCode}`);
-      console.error('Response body:', response.json);
-      console.error('Response headers:', response.headers);
-      throw new Error(`API request failed with status: ${response.statusCode}`);
+    if (statusCode !== 200) {
+      console.error(`API request failed with status: ${statusCode}`);
+      console.error('Response body:', json);
+      console.error('Response headers:', headers);
+      throw new Error(`API request failed with status: ${statusCode}`);
     }
+
+    const reviews = json?.body?.reviews ?? [];
+    if (!Array.isArray(reviews)) {
+      return [];
+    }
+
+    return reviews
+      .map(({ reviewerName, reviewDate, reviewRating, reviewText }) => ({
+        reviewerName,
+        reviewDate,
+        reviewRating,
+        reviewText,
+      }))
+      .filter(Boolean);
   } catch (error) {
     console.error(`Failed to fetch page: ${url}`);
     console.error('Full error object:', error);
@@ -46,7 +58,7 @@ async function fetchPage(url) {
 }
 
 async function fetchReviews(asin, targetCount = 100) {
-  const batchSize = 5; 
+  const batchSize = 5;
   const allReviews = [];
   let page = 1;
 
@@ -57,16 +69,21 @@ async function fetchReviews(asin, targetCount = 100) {
 
     console.log(`Fetching pages ${page} to ${page + batchSize - 1}...`);
 
-    const batchReviews = await Promise.all(urls.map(fetchPage));
-    const flatReviews = batchReviews.flat(); 
+    const batchReviews = await Promise.allSettled(urls.map(fetchPage));
+    const flatReviews = batchReviews
+      .flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+      .filter(Boolean);
 
     allReviews.push(...flatReviews);
-    if (flatReviews.length < batchSize * 10) break;
+
+    if (flatReviews.length === 0) {
+      break;
+    }
 
     page += batchSize;
   }
 
-  return allReviews.slice(0, targetCount); 
+  return allReviews.slice(0, targetCount);
 }
 
 export async function fetchAllReviews(productURL, targetCount = 100) {

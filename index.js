@@ -10,9 +10,6 @@ import loginRoutes from "./login.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Set up MongoDB connection URI
-// const uri = process.env.MONGODB_URI;
-// const uri="mongodb+srv://sohithreddy33:Sohith123@productdb.2flhp.mongodb.net/?appName=ProductDB";
 const uri=process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 

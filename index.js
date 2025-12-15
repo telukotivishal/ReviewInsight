@@ -64,7 +64,7 @@ app.post("/search", async (req, res) => {
     const productsScraped = reviewResponse.data?.results || [];
     if (!productsScraped || productsScraped.length === 0) {
       // Call grok here with the trimmed Name
-      console.log("No products found, calling Groq");
+      console.log("No products found, calling Gemini");
       const geminiSummary = await summarizeWithGemini(trimmedName);
       await collection.insertOne({
         name: trimmedName,

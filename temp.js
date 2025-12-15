@@ -97,4 +97,5 @@ async function fetchAllReviews(productURL, targetCount = 100) {
 
 // Replace with any Amazon product URL
 const amazonProductURL = 'https://www.amazon.in/dp/B08R41SH7Q?pd_rd_i=B08R41SH7Q&pf_rd_p=aa14fa00-bc47-4b9c-afe8-e5f5a8aecc2e&pf_rd_r=HMRB658JH5XZNSSZ38QD&pd_rd_wg=eNRJM&pd_rd_w=UA27M&pd_rd_r=c983c2de-7c88-445d-8221-34936da51a52&th=1';
-fetchAllReviews(amazonProductURL, 100); 
+fetchAllReviews(amazonProductURL, 100);
+

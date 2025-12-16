@@ -72,7 +72,7 @@ app.post("/search", async (req, res) => {
         createdAt: new Date(),
       });
       return res.status(200).json({
-        source: "groq",
+        source: "gemini",
         data: geminiSummary,
       });
     } else {
